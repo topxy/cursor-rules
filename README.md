@@ -6,21 +6,20 @@
 
 - 提供多种预设的 Cursor AI 规则配置，包括：
   - 本地开发
-    - Python 开发规则
+    - python：Python 开发规则
   - 网站开发
-    - HTML/CSS/JavaScript
-    - React
-    - Vue
-    - Next.js
+    - HTML：HTML/CSS/JavaScript
+    - React：React 开发规则
+    - Vue：Vue.js 开发规则
   - 移动开发
-    - iOS 应用开发
-    - Android 应用开发
+    - App开发-iOS：iOS 应用开发
+    - App开发-Android：Android 开发
   - 小程序开发
-    - 微信小程序
+    - 微信小程序：小程序开发规则
   - 浏览器插件
-    - Chrome 插件开发
+    - Chrome插件：浏览器扩展开发
   - 通用规则
-    - 适用于所有项目的基础规则
+    - 通用：适用于所有项目的基础规则
 
 - 便捷的规则管理：
   - 规则预览：添加规则前可以预览规则内容
