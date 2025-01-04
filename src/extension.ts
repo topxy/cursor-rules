@@ -3,6 +3,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import { RuleManager } from './ruleManager';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -12,97 +13,182 @@ export function activate(context: vscode.ExtensionContext) {
 	// This line of code will only be executed once when your extension is activated
 	console.log('Cursor Rules extension is now active!');
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	const disposable = vscode.commands.registerCommand('cursor-rules-huasheng.addRules', async (uri?: vscode.Uri) => {
-		try {
-			// 1. 获取目标路径
-			let targetFolder: string;
-			if (uri) {
-				// 如果是右键点击触发，使用点击的文件夹路径
-				targetFolder = uri.fsPath;
-			} else {
-				// 如果是命令面板触发，使用当前工作区根目录
-				const workspaceFolders = vscode.workspace.workspaceFolders;
-				if (!workspaceFolders) {
-					vscode.window.showErrorMessage('请先打开一个项目文件夹！');
-					return;
+	// 创建规则管理器实例
+	const ruleManager = new RuleManager(context);
+
+	// 注册命令
+	let disposables = [
+		// 原有的添加规则命令
+		vscode.commands.registerCommand('cursor-rules-huasheng.addRules', async (uri?: vscode.Uri) => {
+			try {
+				// 1. 获取目标路径
+				let targetFolder: string;
+				if (uri) {
+					targetFolder = uri.fsPath;
+				} else {
+					const workspaceFolders = vscode.workspace.workspaceFolders;
+					if (!workspaceFolders) {
+						vscode.window.showErrorMessage('请先打开一个项目文件夹！');
+						return;
+					}
+					targetFolder = workspaceFolders[0].uri.fsPath;
 				}
-				targetFolder = workspaceFolders[0].uri.fsPath;
-			}
 
-			// 2. 获取规则文件夹列表
-			const rulesPath = path.join(context.extensionPath, 'rules');
-			const folders = fs.readdirSync(rulesPath).filter(folder => {
-				const stat = fs.statSync(path.join(rulesPath, folder));
-				return stat.isDirectory() && !folder.startsWith('.');
-			});
-
-			// 3. 让用户选择文件夹，并显示描述信息
-			const selectedFolder = await vscode.window.showQuickPick(
-				folders.map(folder => ({
-					label: folder,
-					description: getRuleDescription(path.join(rulesPath, folder, '.cursorrules')),
-					detail: '点击查看规则预览'
-				})), {
-					placeHolder: '选择要添加的规则类型',
-				}
-			);
-
-			if (!selectedFolder) {
-				return;
-			}
-
-			const sourcePath = path.join(rulesPath, selectedFolder.label, '.cursorrules');
-			const targetPath = path.join(targetFolder, '.cursorrules');
-
-			// 4. 检查源文件是否存在
-			if (!fs.existsSync(sourcePath)) {
-				vscode.window.showErrorMessage(`${selectedFolder.label}文件夹中没有找到.cursorrules文件！`);
-				return;
-			}
-
-			// 5. 直接询问是否添加规则
-			const confirmed = await confirmAction(`是否要添加 ${selectedFolder.label} 的 Cursor 规则？`);
-			if (!confirmed) {
-				return;
-			}
-
-			// 6. 检查目标文件是否存在
-			if (fs.existsSync(targetPath)) {
-				const action = await vscode.window.showWarningMessage(
-					'目标目录已存在.cursorrules文件，请选择操作：',
-					'覆盖',
-					'合并',
-					'取消'
+				// 2. 获取所有规则
+				const rules = await ruleManager.getAllRules();
+				
+				// 3. 让用户选择规则
+				const selectedRule = await vscode.window.showQuickPick(
+					rules.map(rule => ({
+						label: rule.name,
+						description: rule.description,
+						detail: '点击添加规则',
+						rule: rule
+					})), {
+						placeHolder: '选择要添加的规则类型',
+					}
 				);
 
-				if (action === '取消' || !action) {
+				if (!selectedRule) {
 					return;
 				}
 
-				if (action === '合并') {
-					// 直接合并文件，不显示预览
-					const sourceContent = fs.readFileSync(sourcePath, 'utf8');
-					const targetContent = fs.readFileSync(targetPath, 'utf8');
-					const mergedContent = `# 原有规则\n${targetContent}\n\n# 新增规则\n${sourceContent}`;
-					fs.writeFileSync(targetPath, mergedContent);
-					vscode.window.showInformationMessage(`成功合并 ${selectedFolder.label} 的 Cursor 规则！`);
+				// 4. 确认添加
+				const confirmed = await confirmAction(`是否要添加 ${selectedRule.label} 的 Cursor 规则？`);
+				if (!confirmed) {
 					return;
 				}
+
+				// 5. 处理规则文件
+				const targetPath = path.join(targetFolder, '.cursorrules');
+				const sourcePath = path.join(context.extensionPath, 'rules', selectedRule.label, '.cursorrules');
+
+				if (fs.existsSync(targetPath)) {
+					const action = await vscode.window.showWarningMessage(
+						'目标目录已存在.cursorrules文件，请选择操作：',
+						'覆盖',
+						'合并',
+						'取消'
+					);
+
+					if (action === '取消' || !action) {
+						return;
+					}
+
+					if (action === '合并') {
+						const sourceContent = fs.readFileSync(sourcePath, 'utf8');
+						const targetContent = fs.readFileSync(targetPath, 'utf8');
+						const mergedContent = `# 原有规则\n${targetContent}\n\n# 新增规则\n${sourceContent}`;
+						fs.writeFileSync(targetPath, mergedContent);
+						vscode.window.showInformationMessage(`成功合并 ${selectedRule.label} 的 Cursor 规则！`);
+						return;
+					}
+				}
+
+				fs.copyFileSync(sourcePath, targetPath);
+				vscode.window.showInformationMessage(`成功添加 ${selectedRule.label} 的 Cursor 规则！`);
+
+			} catch (error) {
+				vscode.window.showErrorMessage(`添加规则失败: ${error}`);
 			}
+		}),
 
-			// 7. 复制或覆盖文件
-			fs.copyFileSync(sourcePath, targetPath);
-			vscode.window.showInformationMessage(`成功添加 ${selectedFolder.label} 的 Cursor 规则！`);
+		// 创建新规则命令
+		vscode.commands.registerCommand('cursor-rules-huasheng.createRule', async () => {
+			try {
+				const name = await vscode.window.showInputBox({
+					prompt: '输入新规则类型名称',
+					placeHolder: '例如: Java开发'
+				});
 
-		} catch (error) {
-			vscode.window.showErrorMessage(`添加规则失败: ${error}`);
-		}
-	});
+				if (!name) {
+					return;
+				}
 
-	context.subscriptions.push(disposable);
+				const description = await vscode.window.showInputBox({
+					prompt: '输入规则描述',
+					placeHolder: '例如: Java 后端开发规则'
+				});
+
+				if (!description) {
+					return;
+				}
+
+				await ruleManager.createRule(name, description);
+				vscode.window.showInformationMessage(`成功创建规则类型: ${name}`);
+
+			} catch (error) {
+				vscode.window.showErrorMessage(`创建规则失败: ${error}`);
+			}
+		}),
+
+		// 编辑规则命令
+		vscode.commands.registerCommand('cursor-rules-huasheng.editRule', async () => {
+			try {
+				const rules = await ruleManager.getAllRules();
+				const selectedRule = await vscode.window.showQuickPick(
+					rules.map(rule => ({
+						label: rule.name,
+						description: rule.description,
+						detail: rule.isBuiltin ? '内置规则' : '自定义规则',
+						rule: rule
+					})), {
+						placeHolder: '选择要编辑的规则',
+					}
+				);
+
+				if (!selectedRule) {
+					return;
+				}
+
+				await ruleManager.editRule(selectedRule.rule.id);
+
+			} catch (error) {
+				vscode.window.showErrorMessage(`编辑规则失败: ${error}`);
+			}
+		}),
+
+		// 删除规则命令
+		vscode.commands.registerCommand('cursor-rules-huasheng.deleteRule', async () => {
+			try {
+				const rules = await ruleManager.getAllRules();
+				const customRules = rules.filter(r => !r.isBuiltin);
+
+				if (customRules.length === 0) {
+					vscode.window.showInformationMessage('没有可删除的自定义规则');
+					return;
+				}
+
+				const selectedRule = await vscode.window.showQuickPick(
+					customRules.map(rule => ({
+						label: rule.name,
+						description: rule.description,
+						detail: '点击删除规则',
+						rule: rule
+					})), {
+						placeHolder: '选择要删除的规则',
+					}
+				);
+
+				if (!selectedRule) {
+					return;
+				}
+
+				const confirmed = await confirmAction(`确定要删除规则 ${selectedRule.label} 吗？此操作不可恢复。`);
+				if (!confirmed) {
+					return;
+				}
+
+				await ruleManager.deleteRule(selectedRule.rule.id);
+				vscode.window.showInformationMessage(`成功删除规则: ${selectedRule.label}`);
+
+			} catch (error) {
+				vscode.window.showErrorMessage(`删除规则失败: ${error}`);
+			}
+		})
+	];
+
+	context.subscriptions.push(...disposables);
 }
 
 // 获取规则文件的描述信息（读取文件的前几行作为描述）
