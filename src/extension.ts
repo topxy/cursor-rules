@@ -63,10 +63,9 @@ export function activate(context: vscode.ExtensionContext) {
 				return;
 			}
 
-			// 5. 预览规则内容
-			const ruleContent = fs.readFileSync(sourcePath, 'utf8');
-			const preview = await showRulePreview(ruleContent);
-			if (!preview) {
+			// 5. 直接询问是否添加规则
+			const confirmed = await confirmAction(`是否要添加 ${selectedFolder.label} 的 Cursor 规则？`);
+			if (!confirmed) {
 				return;
 			}
 
@@ -84,7 +83,11 @@ export function activate(context: vscode.ExtensionContext) {
 				}
 
 				if (action === '合并') {
-					await mergeRules(sourcePath, targetPath);
+					// 直接合并文件，不显示预览
+					const sourceContent = fs.readFileSync(sourcePath, 'utf8');
+					const targetContent = fs.readFileSync(targetPath, 'utf8');
+					const mergedContent = `# 原有规则\n${targetContent}\n\n# 新增规则\n${sourceContent}`;
+					fs.writeFileSync(targetPath, mergedContent);
 					vscode.window.showInformationMessage(`成功合并 ${selectedFolder.label} 的 Cursor 规则！`);
 					return;
 				}
@@ -116,63 +119,14 @@ function getRuleDescription(rulePath: string): string {
 	return '无描述信息';
 }
 
-// 显示规则预览
-async function showRulePreview(content: string): Promise<boolean> {
-	// 创建临时文件来显示预览，只使用支持的选项
-	const doc = await vscode.workspace.openTextDocument({
-		content: content,
-		language: 'markdown'
-	});
-
-	// 使用预览模式打开文档
-	await vscode.window.showTextDocument(doc, {
-		preview: true,
-		viewColumn: vscode.ViewColumn.Active
-	});
-
+// 移除 showRulePreview 函数，改为直接显示确认对话框
+async function confirmAction(message: string): Promise<boolean> {
 	const result = await vscode.window.showInformationMessage(
-		'这是规则文件的预览，确认要添加吗？',
+		message,
 		'确认',
 		'取消'
 	);
-
-	// 关闭预览
-	await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-
 	return result === '确认';
-}
-
-// 合并规则文件
-async function mergeRules(sourcePath: string, targetPath: string): Promise<void> {
-	const sourceContent = fs.readFileSync(sourcePath, 'utf8');
-	const targetContent = fs.readFileSync(targetPath, 'utf8');
-
-	// 创建合并预览
-	const mergedContent = `# 原有规则\n${targetContent}\n\n# 新增规则\n${sourceContent}`;
-	
-	// 显示合并预览，同样只使用支持的选项
-	const doc = await vscode.workspace.openTextDocument({
-		content: mergedContent,
-		language: 'markdown'
-	});
-
-	await vscode.window.showTextDocument(doc, {
-		preview: true,
-		viewColumn: vscode.ViewColumn.Active
-	});
-
-	const result = await vscode.window.showInformationMessage(
-		'这是合并后的预览，确认要保存吗？',
-		'确认',
-		'取消'
-	);
-
-	// 关闭预览
-	await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-
-	if (result === '确认') {
-		fs.writeFileSync(targetPath, mergedContent);
-	}
 }
 
 // This method is called when your extension is deactivated
