@@ -1,0 +1,59 @@
+{
+  "name": "Cursor-rules-huasheng",
+  "displayName": "Cursor Rules - 花生出品",
+  "description": "YouTube/B站博主 AI进化论-花生出品的Cursor rules插件",
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/huashengai/cursor-rules-huasheng.git"
+  },
+  "publisher": "huashengai",
+  "engines": {
+    "vscode": "^1.93.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "Cursor-rules-huasheng.helloWorld",
+        "title": "Hello World"
+      },
+      {
+        "command": "cursor-rules-huasheng.addRules",
+        "title": "花生: 添加 Cursor 规则文件"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "cursor-rules-huasheng.addRules",
+          "group": "2_workspace",
+          "when": "explorerResourceIsFolder"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.93.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "20.x",
+    "@typescript-eslint/eslint-plugin": "^8.17.0",
+    "@typescript-eslint/parser": "^8.17.0",
+    "eslint": "^9.16.0",
+    "typescript": "^5.7.2",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.4.1"
+  }
+}
