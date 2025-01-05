@@ -2,7 +2,7 @@
   "name": "cursor-rules-huasheng",
   "displayName": "花生: 中文 Cursor Rules",
   "description": "YouTube/B站博主 AI进化论-花生出品的Cursor rules插件，自动帮你创建中文.cursorrules文件",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "icon": "images/icon.png",
   "author": {
     "name": "huasheng",
@@ -29,7 +29,10 @@
     "Snippets"
   ],
   "activationEvents": [
-    "onCommand:cursor-rules-huasheng.addRules"
+    "onCommand:cursor-rules-huasheng.addRules",
+    "onCommand:cursor-rules-huasheng.createRule",
+    "onCommand:cursor-rules-huasheng.editRule",
+    "onCommand:cursor-rules-huasheng.deleteRule"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -63,6 +66,7 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
+    "postinstall": "node ./scripts/copyRules.js",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",

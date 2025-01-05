@@ -4,6 +4,7 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import { RuleManager } from './ruleManager';
+import { RulePanel } from './webview/rulePanel';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -87,6 +88,8 @@ export function activate(context: vscode.ExtensionContext) {
 
 				fs.copyFileSync(sourcePath, targetPath);
 				vscode.window.showInformationMessage(`成功添加 ${selectedRule.label} 的 Cursor 规则！`);
+
+				RulePanel.show(context, rules);
 
 			} catch (error) {
 				vscode.window.showErrorMessage(`添加规则失败: ${error}`);

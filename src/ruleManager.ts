@@ -21,7 +21,11 @@ interface ConfigFile {
 export class RuleManager {
     private userRulesPath: string;
     private configPath: string;
-    private config: ConfigFile;
+    private config: ConfigFile = {
+        version: "1.0.0",
+        lastUpdate: new Date().toISOString(),
+        categories: []
+    };
 
     constructor(private context: vscode.ExtensionContext) {
         // 初始化用户规则目录
@@ -54,11 +58,16 @@ export class RuleManager {
     }
 
     private copyFolderRecursive(src: string, dest: string) {
-        const exists = fs.existsSync(src);
-        const stats = exists && fs.statSync(src);
-        const isDirectory = exists && stats.isDirectory();
+        if (!fs.existsSync(src)) {
+            return;
+        }
 
-        if (isDirectory) {
+        const stats = fs.statSync(src);
+        if (!stats) {
+            return;
+        }
+
+        if (stats.isDirectory()) {
             if (!fs.existsSync(dest)) {
                 fs.mkdirSync(dest);
             }
@@ -77,7 +86,104 @@ export class RuleManager {
         return {
             version: "1.0.0",
             lastUpdate: new Date().toISOString(),
-            categories: []
+            categories: [
+                {
+                    id: "app-reactnative",
+                    name: "App开发-ReactNative",
+                    description: "React Native 跨平台应用开发规则",
+                    isBuiltin: true,
+                    isModified: false,
+                    lastModified: new Date().toISOString()
+                },
+                {
+                    id: "app-flutter",
+                    name: "App开发-Flutter",
+                    description: "Flutter 跨平台应用开发规则",
+                    isBuiltin: true,
+                    isModified: false,
+                    lastModified: new Date().toISOString()
+                },
+                {
+                    id: "app-ios",
+                    name: "App开发-iOS",
+                    description: "iOS 原生应用开发规则",
+                    isBuiltin: true,
+                    isModified: false,
+                    lastModified: new Date().toISOString()
+                },
+                {
+                    id: "app-android",
+                    name: "App开发-Android",
+                    description: "Android 原生应用开发规则",
+                    isBuiltin: true,
+                    isModified: false,
+                    lastModified: new Date().toISOString()
+                },
+                {
+                    id: "web-html",
+                    name: "网站-HTML",
+                    description: "HTML/CSS/JavaScript 网站开发规则",
+                    isBuiltin: true,
+                    isModified: false,
+                    lastModified: new Date().toISOString()
+                },
+                {
+                    id: "web-react",
+                    name: "网站-React",
+                    description: "React 网站开发规则",
+                    isBuiltin: true,
+                    isModified: false,
+                    lastModified: new Date().toISOString()
+                },
+                {
+                    id: "web-vue",
+                    name: "网站-Vue",
+                    description: "Vue.js 网站开发规则",
+                    isBuiltin: true,
+                    isModified: false,
+                    lastModified: new Date().toISOString()
+                },
+                {
+                    id: "web-nextjs",
+                    name: "网站-Nextjs",
+                    description: "Next.js 14 全栈开发规则",
+                    isBuiltin: true,
+                    isModified: false,
+                    lastModified: new Date().toISOString()
+                },
+                {
+                    id: "chrome-extension",
+                    name: "Chrome插件",
+                    description: "Chrome 浏览器扩展开发规则",
+                    isBuiltin: true,
+                    isModified: false,
+                    lastModified: new Date().toISOString()
+                },
+                {
+                    id: "wechat-miniprogram",
+                    name: "微信小程序",
+                    description: "微信小程序开发规则",
+                    isBuiltin: true,
+                    isModified: false,
+                    lastModified: new Date().toISOString()
+                },
+                {
+                    id: "local-python",
+                    name: "本地-Python",
+                    description: "Python 开发规则",
+                    isBuiltin: true,
+                    isModified: false,
+                    lastModified: new Date().toISOString()
+                },
+                {
+                    id: "general",
+                    name: "通用",
+                    description: "通用开发规则，适用于所有项目",
+                    isBuiltin: true,
+                    isModified: false,
+                    lastModified: new Date().toISOString()
+                }
+            ]
         };
     }
 

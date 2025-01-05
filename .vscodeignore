@@ -3,9 +3,15 @@
 src/**
 .gitignore
 .yarnrc
+webpack.config.js
 vsc-extension-quickstart.md
 **/tsconfig.json
-**/eslint.config.mjs
+**/.eslintrc.json
 **/*.map
 **/*.ts
-**/.vscode-test.*
+.cursor-rules/**
+scripts/**
+
+# 不忽略这些文件
+!out/**
+!rules/**
